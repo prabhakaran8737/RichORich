@@ -30,12 +30,14 @@ $(function() {
 			this.options = $.extend({
 				limit: 140,
 				css: {'height': '150px', 'width': '200px'},
-				availableId: 'counter'
+				availableId: 'counter',
+				exceeded: function() {},
 			}, options);
 
 			this.index = count++;
 			this.$limit = this.options.limit;
 			this.$availableId = this.options.availableId;
+			this.$exceeded = this.options.exceeded;
 
 			// Regular Expression for &nbsp; to space will not work for chrome
 			// To fix that use `white-space: pre` in css
@@ -95,8 +97,10 @@ $(function() {
 
 			available = this.$limit - text.length;
 			
+			// Can improve this
 			if(available<0) {
 				available_elem.removeClass('info').addClass('warn');
+				this.$exceeded.call(this, available);
 			} else {
 				available_elem.removeClass('warn').addClass('info');
 			}
@@ -118,5 +122,10 @@ $(function() {
 
 
 $(function() {
-	$('#textarea').richorich();
+	$('#textarea').richorich({
+		exceeded: function(count) {
+			// Get the exceeded count
+			console.log(count);
+		}
+	});
 });
