@@ -14,14 +14,42 @@
 </head>
 <body>
 	<h1>Thought Box</h1>
-	<div id="textarea">test<br />123</div>
+	<a href="#" data-toggle="modal" data-target="#rich">Open Modal</a>
+	<div class="modal fade" id="rich">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" id="myModalLabel">Rich Box</h4>
+				</div>
+			<div class="modal-body">
+				<div id="textarea-1"></div>
+				<br />
+				<div id="counter-1"></div>
+			</div>
+			</div>
+		</div>
+	</div>
+	<div id="textarea"></div>
 	<br />
 	<div id="counter"></div>
+
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="bower_components/jquery.browser/dist/jquery.browser.min.js"></script>
 	<script type="text/javascript" src="bower_components/rangy/rangy-core.min.js"></script>
+	<script type="text/javascript" src="bower_components/rangy/rangy-classapplier.js"></script>
 	<script type="text/javascript" src="bower_components/rangy/rangy-textrange.min.js"></script>
 	<script type="text/javascript" src="js/main.js"></script>
+	<script type="text/javascript">
+		$(function() {
+			$('#textarea').html('<a>test</a>');
+			$('#textarea').richorich({
+				exceeded: function(count) {
+					// Get the exceeded count
+					console.log(count);
+				}
+			});
+		});
+	</script>
 </body>
 </html>

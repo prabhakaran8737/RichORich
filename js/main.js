@@ -1,14 +1,14 @@
 $(function() {
 	var count = 0;
 	$.fn.richorich = function(option) {
-		if(typeof(option) == 'object' || typeof(option) == 'undefined') {
+		if(typeof(option)== 'object' || typeof(option)=='undefined') {
 			var args = (typeof(option)=='object'?[option]:[]);
-			
+
 			return this.each(function() {
 				return methods.init.apply(this, args);
 			});
 
-		} else if(typeof(option) == 'string' && typeof(methods[option]) == 'function') {
+		} else if(typeof(option)=='string' && typeof(methods[option])=='function') {
 			// Extract and find the keycode
 			var args = Array.prototype.slice.call(arguments, 1);
 
@@ -33,6 +33,10 @@ $(function() {
 				availableId: 'counter',
 				exceeded: function() {},
 			}, options);
+
+			// Rangy not working without initialization
+			// This can be improved I think so
+			rangy.init();
 
 			this.index = count++;
 			this.$limit = this.options.limit;
@@ -66,14 +70,16 @@ $(function() {
 				};
 
 				$(self).richorich('processHTML', data);
-				
+
 			});
 
 			// Bind Mouse Up event
 			this.$editable.bind('mouseup', function(e) {
 				$(self).richorich('reveal');
 			});
-			
+			setTimeout(function() {
+				self.$editable.focus();
+			}, 50);
 		},
 		reveal: function(keycode) {
 			var self = this,
@@ -82,21 +88,37 @@ $(function() {
 			selection = rangy.getSelection().saveCharacterRanges(editor);
 		},
 		processHTML: function(args) {
-			var str = args.html, available, available_elem = $('#'+this.$availableId);
+			var str = args.html, available, range, text,
+								available_elem = $('#'+this.$availableId);
 			text = 	str.replace(/<br>/g,'\n')
-			
+
 			// Use respective trims if needed
 			if(args.ltrim) { text = methods.ltrim(text); }
 			if(args.ntrim) { text = methods.ntrim(text); }
-			
-			text = text.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi,function($0,$1){return ''})
+
+			text = text
+				.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi,function($0,$1){return ''})
 				.replace(/<br><div>/gi,'\n')
 				.replace(/<div><br><\/div>/gi,'\n')
 				.replace(/<br>&nbsp;/gi,'\n\n')
 				.replace(/<div>|<br>|<\/p>/gi,'\n');
 
+			// Hack for IE
+			if($.browser.msie) {
+				text = text
+								.replace(/\n/g,' ')
+								.replace(/&nbsp;/g,' ')
+								.replace('  ',' ')
+								.replace('  ',' ');
+			}
+
+			// Convert hashtag to link
+			text = text.replace(/\B#\w+/g, function(hash_tag) {
+				return '<span>'+hash_tag+'</span>';
+			});
+
 			available = this.$limit - text.length;
-			
+
 			// Can improve this
 			if(available<0) {
 				available_elem.removeClass('info').addClass('warn');
@@ -108,6 +130,8 @@ $(function() {
 			available_elem.text(available);
 			this.$editable.html(text);
 			
+			range = rangy.getSelection().saveCharacterRanges(this.$editable);
+			console.log(range);
 		},
 		ltrim: function(str) {
 			// Left trim
@@ -118,14 +142,4 @@ $(function() {
 			return $.trim(str);
 		}
 	};
-});
-
-
-$(function() {
-	$('#textarea').richorich({
-		exceeded: function(count) {
-			// Get the exceeded count
-			console.log(count);
-		}
-	});
 });
