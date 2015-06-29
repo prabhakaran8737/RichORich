@@ -85,13 +85,13 @@ $(function() {
 			var self = this,
 				editor = this.$editable.get()[0],
 				selection;
-			selection = rangy.getSelection().saveCharacterRanges(editor);
+			//selection = rangy.getSelection().saveCharacterRanges(editor);
 		},
 		processHTML: function(args) {
-			var str = args.html, available, range, text,
+			var str = args.html, available, range, text, element,
 								available_elem = $('#'+this.$availableId);
 			text = 	str.replace(/<br>/g,'\n')
-
+			element = this.$editable.get()[0];
 			// Use respective trims if needed
 			if(args.ltrim) { text = methods.ltrim(text); }
 			if(args.ntrim) { text = methods.ntrim(text); }
@@ -114,7 +114,7 @@ $(function() {
 
 			// Convert hashtag to link
 			text = text.replace(/\B#\w+/g, function(hash_tag) {
-				return '<span>'+hash_tag+'</span>';
+				return '<a href="'+hash_tag+'">'+hash_tag+'</a>';
 			});
 
 			available = this.$limit - text.length;
@@ -129,9 +129,25 @@ $(function() {
 
 			available_elem.text(available);
 			this.$editable.html(text);
+
+			// Following cursor fix is added by refering
+			// http://stackoverflow.com/questions/1125292/how-to-move-cursor-to-end-of-contenteditable-entity
+			if(document.createRange()) {
+				// Firefox, Chrome, Opera, Safari, IE 9+
+				range = document.createRange();
+				range.selectNodeContents(element);
+				range.collapse(false);
+				selection = window.getSelection();
+				selection.removeAllRanges();
+				selection.addRange(range);	
+			} else {
+				//IE 8 and lower
+				range = document.body.createTextRange();
+		        range.moveToElementText(element);
+		        range.collapse(false);
+		        range.select();
+			}
 			
-			range = rangy.getSelection().saveCharacterRanges(this.$editable);
-			console.log(range);
 		},
 		ltrim: function(str) {
 			// Left trim
