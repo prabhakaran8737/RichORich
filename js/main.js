@@ -117,6 +117,10 @@ $(function() {
 				return '<a href="'+hash_tag+'">'+hash_tag+'</a>';
 			});
 
+			text = text.replace(/(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/gi, function(link) {
+				return '<a href="">'+link+'</a>';
+			});
+
 			available = this.$limit - text.length;
 
 			// Can improve this
