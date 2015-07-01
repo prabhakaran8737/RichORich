@@ -139,15 +139,15 @@ $(function() {
 				range.collapse(false);
 				selection = window.getSelection();
 				selection.removeAllRanges();
-				selection.addRange(range);	
+				selection.addRange(range);
 			} else {
 				//IE 8 and lower
 				range = document.body.createTextRange();
-		        range.moveToElementText(element);
-		        range.collapse(false);
-		        range.select();
+        range.moveToElementText(element);
+        range.collapse(false);
+        range.select();
 			}
-			
+
 		},
 		ltrim: function(str) {
 			// Left trim
