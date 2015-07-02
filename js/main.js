@@ -85,47 +85,46 @@ $(function() {
 			}, 50);
 		},
 		reveal: function(data) {
+			// console.log('Keycode: ' + data.keycode);
 			// 36 - Home
 			// 37 - Left Arrow
 			// 38 - Up Arrow
 			// 39 - Right Arrow
 			// 40 - Down Arrow
-			if(data.keycode==13 || data.keycode==36 || 
+			if(data.keycode==36 || 
 					data.keycode==37 || data.keycode==38 || 
 					data.keycode==39 || data.keycode==40) {
 				return false;
 			}
-			data.elem.richorich('processHTML', data.data);
+			data.elem.richorich('processHTML', {html: data.data.html, keycode: data.keycode});
 		},
 		processHTML: function(args) {
 			var str = args.html, available, range, text, 
 							element, selection, start_range, end_range, 
 							available_elem = $('#'+this.$availableId);
 
+			console.log(args.keycode);
+			//text = str;
 			text = 	str.replace(/<br>/g,'\n')
 			element = this.$editable.get()[0];
 			// Use respective trims if needed
 			if(args.ltrim) { text = methods.ltrim(text); }
 			if(args.ntrim) { text = methods.ntrim(text); }
 			
-			text = text
-				.replace(/<br><div>/gi,'\n')
-				.replace(/<div><br><\/div>/gi,'\n')
-				.replace(/<br>&nbsp;/gi,'\n\n')
-				.replace(/<div>|<br>|<\/p>/gi,'\n')
-				.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi,function($0,$1){return ''});
-
-			// Hack for IE
-			if($.browser.msie) {
-				text = text
-								.replace(/\n/g,' ')
-								.replace(/&nbsp;/g,' ')
-								.replace('  ',' ')
-								.replace('  ',' ');
+			// Trace the Cursor Position
+			selection = rangy.getSelection().saveCharacterRanges(element);
+			
+			// Check the position
+			if(selection.length && args.keycode==13) {
+				var start_range = selection[0].characterRange.start;
+				var end_range = selection[0].characterRange.end;
+				// If enter is pressed move to the next line
+				text = text + '\n\n';
 			}
 
-			available = this.$limit - text.length;
+			text = methods.extractText(text);
 
+			available = this.$limit - text.length;
 			// Convert hashtag and url to link
 			text = text.linkify();
 
@@ -135,16 +134,6 @@ $(function() {
 				this.$exceeded.call(this, available);
 			} else {
 				available_elem.removeClass('warn').addClass('info');
-			}
-
-			// Trace the Cursor Position
-			selection = rangy.getSelection().saveCharacterRanges(element);
-			
-			// Following If block is not used anywhere - Just for Reference
-			// Check the position
-			if(selection.length) {
-				var start_range = selection[0].characterRange.start;
-				var end_range = selection[0].characterRange.end;
 			}
 
 			// Update the counter
@@ -164,6 +153,24 @@ $(function() {
 		ntrim: function(str) {
 			// Normal trim
 			return $.trim(str);
+		},
+		extractText: function(text) {
+			text = text
+				.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi,function($0,$1){return ''})
+				.replace(/<br><div>/gi,'\n')
+				.replace(/<div><br><\/div>/gi,'\n')
+				.replace(/<br>&nbsp;/gi,'\n\n')
+				.replace(/<div>|<br>|<\/p>/gi,'\n');
+
+			// Hack for IE
+			if($.browser.msie) {
+				text = text
+					.replace(/\n/g,' ')
+					.replace(/&nbsp;/g,' ')
+					.replace('  ',' ')
+					.replace('  ',' ');
+			}
+			return text;
 		},
 		caret: function(element) {
 			// Following cursor fix is added by refering
