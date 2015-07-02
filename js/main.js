@@ -156,7 +156,7 @@ $(function() {
 			// Update the counter
 			available_elem.text(available);
 
-			// Update the content in contentexitable
+			// Update the content in contenteditable
 			this.$editable.html(text.replace(/\n/g, "<br />"));
 
 			// Restore the Cursor Position
