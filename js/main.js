@@ -42,6 +42,7 @@ $(function() {
 			this.$limit = this.options.limit;
 			this.$availableId = this.options.availableId;
 			this.$exceeded = this.options.exceeded;
+			//this.$ctrl = false;
 
 			// Regular Expression for &nbsp; to space will not work for chrome
 			// To fix that use `white-space: pre` in css
@@ -61,31 +62,38 @@ $(function() {
 			$(this).html(this.$editable).css(this.options.css);
 
 			// Bind events for content editable
-			this.$editable.bind('keyup', function(e) {
-				$(self).richorich('reveal', e.which);
+			this.$editable.bind('keydown', function(e) {
+				this.$ctrl = (e.which==17)?true:false;
+				this.$selectAll = (this.$ctrl && e.which==65)?true:false;
+			}).bind('keyup', function(e) {
 				// Convert to Browser Readable format
 				data = {
 					html: $(this).html(),
 					ltrim: true
 				};
-
-				$(self).richorich('processHTML', data);
-
+				if(!this.$selectAll) {
+					$(self).richorich('reveal', {data: data, elem: $(self), keycode: e.which});
+				}
+			}).bind('mouseup', function(e) {
+				// $(self).richorich('reveal');
+			}).select(function() {
+				console.log('select all');
 			});
 
 			// Bind Mouse Up event
-			this.$editable.bind('mouseup', function(e) {
-				$(self).richorich('reveal');
-			});
+			this.$editable
 			setTimeout(function() {
 				self.$editable.focus();
 			}, 50);
 		},
-		reveal: function(keycode) {
-			var self = this,
-				editor = this.$editable.get()[0],
-				selection;
-			//selection = rangy.getSelection().saveCharacterRanges(editor);
+		reveal: function(data) {
+			// 36 - Home
+			// 37 - Left Arrow
+			// 39 - Right Arrow
+			if(data.keycode==13 || data.keycode==36 || data.keycode==37 || data.keycode==39) {
+				return false;
+			}
+			data.elem.richorich('processHTML', data.data);
 		},
 		processHTML: function(args) {
 			var str = args.html, available, range, text, element,
@@ -112,12 +120,10 @@ $(function() {
 								.replace('  ',' ');
 			}
 
-			// Convert hashtag to link
-			text = text.replace(/\B#\w+/g, function(hash_tag) {
-				return '<a href="'+hash_tag+'">'+hash_tag+'</a>';
-			});
-
 			available = this.$limit - text.length;
+
+			// Convert hashtag and url to link
+			text = text.linkify();
 
 			// Can improve this
 			if(available<0) {
@@ -127,9 +133,22 @@ $(function() {
 				available_elem.removeClass('warn').addClass('info');
 			}
 
+			// Update the counter
 			available_elem.text(available);
+			// Update the content in contentexitable
 			this.$editable.html(text);
-
+			// Update the cursor position
+			methods.carot(element);
+		},
+		ltrim: function(str) {
+			// Left trim
+			return str.replace(/^[ \\s\u00A0 ]+/g,'');
+		},
+		ntrim: function(str) {
+			// Normal trim
+			return $.trim(str);
+		},
+		carot: function(element) {
 			// Following cursor fix is added by refering
 			// http://stackoverflow.com/questions/1125292/how-to-move-cursor-to-end-of-contenteditable-entity
 			if(document.createRange()) {
@@ -143,19 +162,11 @@ $(function() {
 			} else {
 				//IE 8 and lower
 				range = document.body.createTextRange();
-        range.moveToElementText(element);
-        range.collapse(false);
-        range.select();
+		        range.moveToElementText(element);
+		        range.collapse(false);
+		        range.select();
 			}
 
-		},
-		ltrim: function(str) {
-			// Left trim
-			return str.replace(/^[ \\s\u00A0 ]+/g,'');
-		},
-		ntrim: function(str) {
-			// Normal trim
-			return $.trim(str);
 		}
 	};
 });
