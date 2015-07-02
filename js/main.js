@@ -123,7 +123,21 @@ $(function() {
 			available = this.$limit - text.length;
 
 			// Convert hashtag and url to link
-			text = text.linkify();
+			text = text.linkify({
+				formatHref: function (value, type) {
+					if (type === 'hashtag') {
+						$($(element)[0]).tagautocomplete({
+						// $('div#example').tagautocomplete({					
+						source: ['#ann', '#bill', '#casey', '#work', '#finance', '#home'],
+						character: '#',
+						after: function () {
+							// alert(0);	
+						}
+					});
+				}
+				return value;
+				}
+			});
 
 			// Can improve this
 			if(available<0) {
