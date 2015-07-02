@@ -24,6 +24,7 @@ $(function() {
 	var methods = {
 		init: function(options) {
 			var self = this,
+				element,
 				editable_css = {'width': 'inherit', 'height': 'inherit'},
 				current_content, updated_content, data;
 
@@ -54,6 +55,8 @@ $(function() {
 				ntrim: true
 			};
 
+			this.previousText = $.trim($(this).html().replace(/<br>/g,'\n'));
+
 			// Get the present content during initialization
 			$(self).richorich('processHTML', data);
 
@@ -62,6 +65,7 @@ $(function() {
 
 			// Bind events for content editable
 			this.$editable.bind('keydown', function(e) {
+				// To detect ctrl + A
 				if(!this.$ctrl) {
 					this.$ctrl = (e.which==17)?true:false;
 				}
@@ -75,13 +79,13 @@ $(function() {
 				if(!this.$selectAll) {
 					$(self).richorich('reveal', {data: data, elem: $(self), keycode: e.which});
 				}
-			}).bind('mouseup', function(e) {
-				// $(self).richorich('reveal');
 			});
 
 			// Bind Mouse Up event
 			setTimeout(function() {
 				self.$editable.focus();
+				element = self.$editable.get()[0];
+				methods.caret(element);
 			}, 50);
 		},
 		reveal: function(data) {
@@ -100,13 +104,14 @@ $(function() {
 		},
 		processHTML: function(args) {
 			var str = args.html, available, range, text, 
-							element, selection, start_range, end_range, 
+							element, selection, start_range=0, end_range=0, 
 							available_elem = $('#'+this.$availableId);
 
-			console.log(args.keycode);
-			//text = str;
 			text = 	str.replace(/<br>/g,'\n')
+			text = methods.stripTags(text);
+
 			element = this.$editable.get()[0];
+
 			// Use respective trims if needed
 			if(args.ltrim) { text = methods.ltrim(text); }
 			if(args.ntrim) { text = methods.ntrim(text); }
@@ -115,19 +120,31 @@ $(function() {
 			selection = rangy.getSelection().saveCharacterRanges(element);
 			
 			// Check the position
-			if(selection.length && args.keycode==13) {
+			if(selection.length) {
 				var start_range = selection[0].characterRange.start;
 				var end_range = selection[0].characterRange.end;
-				// If enter is pressed move to the next line
-				text = text + '\n\n';
 			}
-
-			text = methods.extractText(text);
-
+			
+			if(start_range==0 && args.keycode==13) {
+				// Execute when empty text detected
+				text = this.previousText + '\n\n';
+			} else if(args.keycode==13 && start_range==this.previousText.length+1) {
+				// Execute line ending
+				console.log('link ending');
+				text = methods.ltrim(this.previousText) + '\n\n';
+			} else {
+				console.log('exception');
+				text = methods.extractText(text);
+			}
+			
 			available = this.$limit - text.length;
+
+			// Update the new text
+			this.previousText = text;
+
 			// Convert hashtag and url to link
 			text = text.linkify();
-
+			console.log('---', text);
 			// Can improve this
 			if(available<0) {
 				available_elem.removeClass('info').addClass('warn');
@@ -140,7 +157,7 @@ $(function() {
 			available_elem.text(available);
 
 			// Update the content in contentexitable
-			this.$editable.html(text);
+			this.$editable.html(text.replace(/\n/g, "<br />"));
 
 			// Restore the Cursor Position
 			rangy.getSelection().restoreCharacterRanges(element, selection);
@@ -154,9 +171,13 @@ $(function() {
 			// Normal trim
 			return $.trim(str);
 		},
+		stripTags: function(text) {
+			text = text
+				.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi,function($0,$1){return ''});
+			return text;
+		},
 		extractText: function(text) {
 			text = text
-				.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi,function($0,$1){return ''})
 				.replace(/<br><div>/gi,'\n')
 				.replace(/<div><br><\/div>/gi,'\n')
 				.replace(/<br>&nbsp;/gi,'\n\n')
@@ -175,21 +196,21 @@ $(function() {
 		caret: function(element) {
 			// Following cursor fix is added by refering
 			// http://stackoverflow.com/questions/1125292/how-to-move-cursor-to-end-of-contenteditable-entity
-			// if(document.createRange()) {
-			// 	// Firefox, Chrome, Opera, Safari, IE 9+
-			// 	range = document.createRange();
-			// 	range.selectNodeContents(element);
-			// 	range.collapse(false);
-			// 	selection = window.getSelection();
-			// 	selection.removeAllRanges();
-			// 	selection.addRange(range);
-			// } else {
-			// 	//IE 8 and lower
-			// 	range = document.body.createTextRange();
-		 //        range.moveToElementText(element);
-		 //        range.collapse(false);
-		 //        range.select();
-			// }
+			if(document.createRange()) {
+				// Firefox, Chrome, Opera, Safari, IE 9+
+				range = document.createRange();
+				range.selectNodeContents(element);
+				range.collapse(false);
+				selection = window.getSelection();
+				selection.removeAllRanges();
+				selection.addRange(range);
+			} else {
+				//IE 8 and lower
+				range = document.body.createTextRange();
+		        range.moveToElementText(element);
+		        range.collapse(false);
+		        range.select();
+			}
 
 		}
 	};
